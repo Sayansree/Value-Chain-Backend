@@ -4,6 +4,7 @@ var cookieparser = require('cookie-parser');
 var multer = require('multer');
 var express = require('express');
 var SHA512 = require('crypto-js/sha512');
+
 var dotenv = require('dotenv');
 var cors = require('cors');
 var path = require('path');
@@ -82,17 +83,23 @@ app.post('/find',(request, response)=>{
   app.post('/signup',(request,response)=> { 
     if(Object.keys(request.cookies).length===0){
       checkemail(request.body.email).then(()=>{
-        response.send({exists:true});
-      }).catch(()=>addUser(request.body.phone,request.body.username,request.body.email,request.body.password)
+        response.send({exists:true,verify:true});
+      }).catch(()=>{
+        checkemailVerify(request.body.email).then(()=>{
+          response.send({exists:true,verify:false});
+        }).catch(()=>{let linkhash=SHA512(`${request.body.email}${(new Date()).toUTCString()}`).toString()
+        SMTP.sendMail({type:"EMAIL_VERIFY",url:`https://localhost:8080/verify/${linkhash}`, email:request.body.email,user:request.body.username})
+        addUser(request.body.loc,request.body.username,request.body.email,request.body.password,linkhash)
       .then(() =>{
-        response.send({exists:false,status:true});
+        response.send({exists:false,verify:true});
         console.log(Date(),`user ${request.body.username} registered` ,request.ip );
       }).catch((stat)=>{
       response.body=stat
         response.send({exists:false,status:false});
         console.log(Date(),`registration of ${request.body.username} failed`,request.ip);
       })
-      )
+    })
+    })
     }
   });
   app.get('/logout',(request,response)=> {
@@ -100,6 +107,11 @@ app.post('/find',(request, response)=>{
       response.redirect("/auth");
       console.log(Date(), 'logout', request.ip);
     });
+    app.get('/verify/:linkhash',(request, response)=>{
+
+      verifyUser(request.params.linkhash)
+      response.sendFile(path.join( __dirname + `/html/verified.html`));
+    })
 
 
   app.listen(appPort,()=>{
@@ -107,7 +119,6 @@ app.post('/find',(request, response)=>{
     console.log(Date(), `APP SERVER ONLINE http://localhost:${appPort}/`);
 
   });
-  //################################################graphql######################################################
 
   /////////////////////////////////////////////////////database queries//////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -134,7 +145,7 @@ const client = new pg.Client(DBSconfig);
 console.log(SMTPconfig)
 let SMTP = new emailer(SMTPconfig)
 
-const connectSMTP =  SMTP.connect()
+const connectSMTP =()=>  SMTP.connect()
 
 const connectDatabase = async () => { 
     await client.connect(); 
@@ -144,7 +155,7 @@ const connectDatabase = async () => {
 //############################################root functions############################################################################################
 const print = async () => {
   await client.query(`USE ${process.env.database};`);
-  const rs = await client.query(`SELECT * FROM ${process.env.table};`);
+  const rs = await client.query(`SELECT * FROM users;`);
   s=""
   for(let r of rs.fields)
     s+=r.name+" "
@@ -173,31 +184,45 @@ const createTable = async () =>   {await client.query(
       loc GEOMETRY NOT NULL DEFAULT ST_GeomFromText('POINT(0 0)'),
       passwordHash VARCHAR(512) NOT NULL,
       hashlink VARCHAR(512) NOT NULL,
-      PRIMARY KEY(hashlink));`);
+      PRIMARY KEY(email));`);
 }
 
 const addDummy = async() => {
-   await client.query(`INSERT INTO ${process.env.table} (email,name,loc,passwordHash) VALUES ('sushree@gmail.com','sushree',ST_GeomFromText('POINT(99 100)'), '${SHA512("hackholics")}');`)
-   await client.query(`INSERT INTO ${process.env.table} (email,name,loc,passwordHash) VALUES ('satarupa@gmail.com','satarupa',ST_GeomFromText('POINT(99.9 100.1)'), '${SHA512("hackholics")}');`)
-   await client.query(`INSERT INTO ${process.env.table} (email,name,loc,passwordHash) VALUES ('sayansree@gmail.com','sayansree',ST_GeomFromText('POINT(97 100.2)'), '${SHA512("hackholics")}');`)
-   await client.query(`INSERT INTO ${process.env.table} (email,name,loc,passwordHash) VALUES ('paria@gmail.com','paria',ST_GeomFromText('POINT(90 95)'), '${SHA512("hackholics")}');`)
+   await client.query(`INSERT INTO users (email,name,loc,passwordHash) VALUES ('sushree@gmail.com','sushree',ST_GeomFromText('POINT(99 100)'), '${SHA512("hackholics")}');`)
+   await client.query(`INSERT INTO users (email,name,loc,passwordHash) VALUES ('satarupa@gmail.com','satarupa',ST_GeomFromText('POINT(99.9 100.1)'), '${SHA512("hackholics")}');`)
+   await client.query(`INSERT INTO users (email,name,loc,passwordHash) VALUES ('sayansree@gmail.com','sayansree',ST_GeomFromText('POINT(97 100.2)'), '${SHA512("hackholics")}');`)
+   await client.query(`INSERT INTO users (email,name,loc,passwordHash) VALUES ('paria@gmail.com','paria',ST_GeomFromText('POINT(90 95)'), '${SHA512("hackholics")}');`)
 
 
 }
-const dropTable   = async () =>   await client.query(`DROP TABLE IF EXISTS ${process.env.table}`);
+const dropTable   = async () =>   await client.query(`DROP TABLE IF EXISTS users`);
 const reset       = async () => { await dropTable(); await createTable(); }
-const addColumn   = async (col) => await client.query(`ALTER TABLE ${process.env.table} ADD ${col} INT NOT NULL DEFAULT 0`).catch((err)=>console.log(`ignoring ${col} column already exists`));
+const addColumn   = async (col) => await client.query(`ALTER TABLE users ADD ${col} INT NOT NULL DEFAULT 0`).catch((err)=>console.log(`ignoring ${col} column already exists`));
 
 //#######################################################data manupulation###########################################################################
-const addUser   =   async (phone,name,email,passwordhash)    => await client.query(`INSERT INTO ${process.env.table} 
-                    ( phone, name ,email ,passwordhash ) VALUES (${phone},'${name}','${email}','${passwordhash}');`);
-const removeUser=   async (cookiehash)    => await client.query(`DELETE FROM ${process.env.table} WHERE cookiehash = '${cookiehash} IF EXISTS;`);
-const addcookie =   async (email,cookiehash) => await client.query(`UPDATE ${process.env.table} SET cookiehash = '${cookiehash}' WHERE EMAIL = '${email}'`)
+const addUser   =   async (loc,name,email,passwordhash,linkhash)    =>  await client.query(`INSERT INTO verify 
+  ( loc, name ,email ,passwordhash,hashlink ) 
+  VALUES (ST_GeomFromText('POINT(${loc.lat} ${loc.long})'),'${name}','${email}','${passwordhash}','${linkhash}');`);
+const verifyUser   =   async (linkhash)    =>{
+              await client.query(`INSERT INTO users (loc, name ,email ,passwordhash) SELECT loc,name,email,passwordhash FROM verify WHERE hashlink='${linkhash}'`);
+              await client.query(`DELETE FROM verify WHERE hashlink='${linkhash}'`);
+}
+const removeUser=   async (cookiehash)    => await client.query(`DELETE FROM users WHERE cookiehash = '${cookiehash} IF EXISTS;`);
+const addcookie =   async (email,cookiehash) => await client.query(`UPDATE users SET cookiehash = '${cookiehash}' WHERE EMAIL = '${email}'`)
 
 //######################################################data fetching########################################################################
 const checkemail =   async (email) => {
   return myPromise = new Promise(async(success, fail) =>{
-    let rs = await client.query(`SELECT email FROM ${process.env.table} WHERE email = '${email}';`);
+    let rs = await client.query(`SELECT email FROM users WHERE email = '${email}';`);
+    if(rs.rowCount==1){
+      success();
+    }else
+      fail();
+  })
+};
+const checkemailVerify =   async (email) => {
+  return myPromise = new Promise(async(success, fail) =>{
+    let rs = await client.query(`SELECT email FROM verify WHERE email = '${email}';`);
     if(rs.rowCount==1){
       success();
     }else
@@ -206,7 +231,7 @@ const checkemail =   async (email) => {
 };
 const nearMe =   async (dist,cookiehash) => {
   return myPromise = new Promise(async(success, fail) =>{
-    let rs = await client.query(`SELECT loc,id FROM ${process.env.table} WHERE cookiehash = '${cookiehash}' ;`);
+    let rs = await client.query(`SELECT loc,id FROM users WHERE cookiehash = '${cookiehash}' ;`);
     if(rs.rowCount==1){
       rs = await client.query(`select name,dist,id from
       (select name,st_distance(${rs.rows[0].loc},loc) as dist from users
@@ -220,7 +245,7 @@ const nearMe =   async (dist,cookiehash) => {
 
 const searchByName =   async (querry,limit) => {
   return myPromise = new Promise(async(success, fail) =>{
-    let rs = await client.query(`SELECT name FROM ${process.env.table} WHERE 
+    let rs = await client.query(`SELECT name FROM users WHERE 
     name LIKE '${querry}%' OR
     name LIKE '${querry}' OR
     name LIKE '%${querry}' OR
@@ -237,7 +262,7 @@ const searchByName =   async (querry,limit) => {
 
 const checkCookies =   async (cookiehash) => {
   return myPromise = new Promise(async(success, fail) =>{
-    let rs = await client.query(`SELECT email FROM ${process.env.table} WHERE cookiehash = '${cookiehash}' ;`);
+    let rs = await client.query(`SELECT email FROM users WHERE cookiehash = '${cookiehash}' ;`);
     if(rs.rowCount==1){
       success();
     }else
@@ -247,7 +272,7 @@ const checkCookies =   async (cookiehash) => {
 
 const auth =  async (email,passhash)  =>{
   return myPromise = new Promise(async(success, fail) =>{
-      let rs = await client.query(`SELECT passwordhash FROM ${process.env.table} WHERE email = '${email}' ;`);
+      let rs = await client.query(`SELECT passwordhash FROM users WHERE email = '${email}' ;`);
       if(rs.rowCount){
           let row=rs.rows[0];
           if(row.passwordhash==passhash)
