@@ -73,8 +73,24 @@ window.onload =()=>{
             msglogin.innerHTML = "connection error";
         })
     }
-    
-    signupbtn.onclick = async() => {
+    window.locError=(error)=>{
+        msgsignup.style.color = "red";
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            msgsignup.innerHTML = "User denied the request for Geolocation."
+            break;
+          case error.POSITION_UNAVAILABLE:
+            msgsignup.innerHTML = "Location information is unavailable."
+            break;
+          case error.TIMEOUT:
+            msgsignup.innerHTML = "The request to get user location timed out."
+            break;
+          case error.UNKNOWN_ERROR:
+            msgsignup.innerHTML = "An unknown error occurred."
+            break;
+        }
+      }
+    window.register= async(pos)=>{
         const email=document.getElementById("sign-email").value;
         const pass=document.getElementById("sign-pass").value;
         const uname=document.getElementById("sign-uname").value;
@@ -85,27 +101,41 @@ window.onload =()=>{
             method:'post',
             mode:'cors',
             credentials: 'same-origin',
-            body : JSON.stringify({'username':uname,'email':email,'password':CryptoJS.SHA512(pass).toString()}),
+            body : JSON.stringify({'loc':{'lat': pos.coords.latitude,'long':pos.coords.longitude},'username':uname,'email':email,'password':CryptoJS.SHA512(pass).toString()}),
             headers: {"Content-type": "application/json; charset=UTF-8"},
         }
         ).then((resp)=>resp.json())
         .then((resp)=>{
             if (resp.exists){
-                msgsignup.style.color = "red";
-                msgsignup.innerHTML= "account already registered  with this email please login ";
-               
-            }else if(resp.status){
+                if(resp.verify){
+                    msgsignup.style.color = "red";
+                    msgsignup.innerHTML= "account already registered  with this email please login ";
+                }else{
+                    msgsignup.style.color = "orange";
+                    msgsignup.innerHTML= "account registered not yet verified, to verify click on link in your inbox";
+                }
+            }else if(resp.verify){
                 msgsignup.style.color = "green";
-                msgsignup.innerHTML= "your account has been successfully registered";
+                msgsignup.innerHTML= "your account has been successfully registered, to verify click on link in your inbox";
                 setTimeout(()=>window.open("/","_self"),2000);
             }else{
-                msgsignup.style.color = "orange";
+                msgsignup.style.color = "yellow";
                 msgsignup.innerHTML= "some error occoured, try again";
             }
         }).catch(()=>{
             msgsignup.style.color = "red";
             msgsignup.innerHTML = "connection error";
         })
+    }
+    
+    signupbtn.onclick = async() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(register,locError);
+        } else {
+            msgsignup.style.color = "red";
+            msgsignup.innerHTML = "loctation is not supported unable to register";
+        }
+        
     }
     window.openTab =(evt, tabName)=> {
         // Declare all variables
