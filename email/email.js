@@ -45,7 +45,7 @@ class SMTP {
     disconnect = () => this.transporter.close()
     sendMail = (obj) =>{
         switch(obj.type){
-            case "FORGOT_PASSWORD": this.mail.html=this.email.verify[0] + obj.user + this.email.verify[1] + obj.email + this.email.verify[2] + obj.url + this.email.verify[3]
+            case "FORGOT_PASSWORD": this.mail.html=this.email.forgot[0] + obj.user + this.email.forgot[1] + obj.email + this.email.forgot[2] + obj.url + this.email.forgot[3]
                                     this.mail.subject="it-connects.us | Password Reset"
                                     break;
             case "EMAIL_VERIFY"   : this.mail.html=this.email.verify[0] + obj.user + this.email.verify[1] + obj.url + this.email.verify[2]
