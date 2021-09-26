@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="/style/auth">
+    <script src="/script/auth"> </script>
+    <title>Login-Register</title>
+</head>
+<body>
+    <div id="login-forms">
+        <div class="heading">
+            <a href="https://cheattogether.study" target="_blank"> <img src="/assets/logo.png"></a>
+        </div>
+        <div id="form">
+            <div class="tab">
+                <button class="tablinks active" onclick="openTab(event, 'form-login')">Sign in</button>
+                <button class="tablinks" onclick="openTab(event, 'form-signup')">Sign up</button>
+            </div>
+            <div id="form-login" class="tabcontent"> 
+                <h1> Sign in</h1>
+                <input type="email" id="login-email" class="form-control" placeholder="Email address" required="" autofocus="">
+                <input type="password" id="login-pass" class="form-control" placeholder="Password" required="">
+                <h3  type="message" id="login-msg"> </h3>
+                <button id="login">Sign in</button>
+                <hr>
+                <p>Don't have an account!</p>
+                <button type="button" onclick="signUp()"><i>Sign up a New Account</i> </button>
+                <p>Forgot Password?</p>
+                <button type="button" class="reset" onclick="forgot()"><i>Reset Password</i> </button>
+            </div> 
+            <div  id="form-signup" class="tabcontent">              
+                <h1> Sign Up</h1>
+                <input type="text" id="sign-uname" class="form-control" placeholder="Full name" required autofocus="">
+                <input type="email" id="sign-email" class="form-control" placeholder="Email address" required autofocus="">
+                <input type="password" id="sign-pass" class="form-control" placeholder="Password" required autofocus="">
+                <h3 type="message" id="sign-msg"> </h3>
+                <button id="signup"> Sign Up</button>
+                <hr>
+                <p>Already having an account?</p>
+                <button type="button" onclick="login()"><i>Login to an Account</i> </button>
+                <p>Forgot Password?</p>
+                <button type="button" class="reset" onclick="forgot()"><i>Reset Password</i> </button>
+            </div>
+        </div>
+        <div  id="form-forgot">              
+            <h1> Forgot Password </h1>               
+            <input type="email" id="forgot-email" class="form-control" placeholder="Email address" required autofocus="">
+            <h3 type="message" id="forgot-msg"> </h3>
+            <button id="forgot" class="" ><i class="fas fa-user-plus"></i> Send Reset link</button>
+            <hr>
+            <p>Already having an account?</p>
+            <button type="button" onclick="login()"><i>Login to an Account</i> </button>
+            <p>Don't have an account!</p>
+            <button type="button" onclick="signUp()"><i>Sign up a New Account</i> </button>
+        </div>
+        <div class="heading">
+            <a href="https://cheattogether.study" target="_blank"><p style="text-decoration: none;">Copyright © Cheat Together</p></a>
+        </div>
+        <br>
+            
+    </div>
+</body>
+</html>
