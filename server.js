@@ -88,7 +88,7 @@ app.post('/find',(request, response)=>{
         checkemailVerify(request.body.email).then(()=>{
           response.send({exists:true,verify:false});
         }).catch(()=>{let linkhash=SHA512(`${request.body.email}${(new Date()).toUTCString()}`).toString()
-        SMTP.sendMail({type:"EMAIL_VERIFY",url:`https://localhost:8080/verify/${linkhash}`, email:request.body.email,user:request.body.username})
+        SMTP.sendMail({type:"EMAIL_VERIFY",url:`https://it-connects-us.herokuapp.com/${linkhash}`, email:request.body.email,user:request.body.username})
         addUser(request.body.loc,request.body.username,request.body.email,request.body.password,linkhash)
       .then(() =>{
         response.send({exists:false,verify:true});
