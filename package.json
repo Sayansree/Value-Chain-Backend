@@ -4,6 +4,7 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js"
+        "test": "test.js"
     },
     "dependencies": {
         "async": "^3.2.0",
