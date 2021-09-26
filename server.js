@@ -7,7 +7,7 @@ var SHA512 = require('crypto-js/sha512');
 var dotenv = require('dotenv');
 var cors = require('cors');
 var path = require('path');
-const { request, response } = require('express');
+const emailer =require('./email/email')
 
 dotenv.config()
 var app = express();
@@ -24,7 +24,6 @@ app.use(upload.array());
 app.use(express.static('public'));
 
 app.get('/test', (req, res) => {
-
       res.send('OK');
 });
 
@@ -112,7 +111,7 @@ app.post('/find',(request, response)=>{
 
   /////////////////////////////////////////////////////database queries//////////////////////////////////////////////////////////////////////////////////////////////
 
-var DBSconfig = {
+const DBSconfig = {
     user: process.env.dbsuser,
     password:process.env.dbspass,
     host: process.env.dbsurl,
@@ -124,7 +123,18 @@ var DBSconfig = {
       ca: fs.readFileSync(__dirname+'/certs/cc-ca.crt').toString()
     }
 };
+const SMTPconfig={
+  host:process.env.smtpurl,
+  port:process.env.smtpPORT,
+  user:process.env.smtpemail,
+  pass:process.env.smtppass
+}
+
 const client = new pg.Client(DBSconfig);
+console.log(SMTPconfig)
+let SMTP = new emailer(SMTPconfig)
+
+const connectSMTP =  SMTP.connect()
 
 const connectDatabase = async () => { 
     await client.connect(); 
@@ -145,16 +155,25 @@ const print = async () => {
   }
 }
 const stop        = async () =>   await client.shutdown();
-const createTable = async () =>   {await client.query(`
-CREATE TABLE IF NOT EXISTS users ( 
-  id UUID NOT NULL DEFAULT gen_random_uuid(),
-  phone BIGINT,
-  email VARCHAR(50) NOT NULL,
-  name VARCHAR(70) NOT NULL,
-  loc GEOMETRY NOT NULL DEFAULT ST_GeomFromText('POINT(0 0)'),
-  passwordHash VARCHAR(512) NOT NULL,
-  cookieHash VARCHAR(512),
-  PRIMARY KEY(id));`);
+const createTable = async () =>   {await client.query(
+  `CREATE TABLE IF NOT EXISTS users ( 
+    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    phone BIGINT,
+    email VARCHAR(50) NOT NULL,
+    name VARCHAR(70) NOT NULL,
+    loc GEOMETRY NOT NULL DEFAULT ST_GeomFromText('POINT(0 0)'),
+    passwordHash VARCHAR(512) NOT NULL,
+    cookieHash VARCHAR(512),
+    PRIMARY KEY(id));`);
+  await client.query(
+  `CREATE TABLE IF NOT EXISTS verify ( 
+      phone BIGINT,
+      email VARCHAR(50) NOT NULL,
+      name VARCHAR(70) NOT NULL,
+      loc GEOMETRY NOT NULL DEFAULT ST_GeomFromText('POINT(0 0)'),
+      passwordHash VARCHAR(512) NOT NULL,
+      hashlink VARCHAR(512) NOT NULL,
+      PRIMARY KEY(hashlink));`);
 }
 
 const addDummy = async() => {
@@ -241,12 +260,14 @@ const auth =  async (email,passhash)  =>{
 
   async function test() {
       await connectDatabase();
+      connectSMTP()
       await reset();
       await addDummy();
       await print();
   }
   async function setup() {
     await connectDatabase();
+    connectSMTP()
   }
 setup();
 // test();
