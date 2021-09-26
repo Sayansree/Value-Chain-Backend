@@ -103,6 +103,7 @@ dist
 # TernJS port file
 .tern-port
 .env
-.createtble.sql
+createtble.sql
 graph.js
 test2.js
+loc.html
