@@ -35,6 +35,7 @@ class SMTP {
         try {
             this.email.verify = this.loadPage('verify')
             this.email.forgot = this.loadPage('forgot')
+            this.email.newsletter = this.loadPage('newsletter')
           } catch (err) {
             console.error(err)
           }
@@ -46,10 +47,13 @@ class SMTP {
     sendMail = (obj) =>{
         switch(obj.type){
             case "FORGOT_PASSWORD": this.mail.html=this.email.forgot[0] + obj.user + this.email.forgot[1] + obj.email + this.email.forgot[2] + obj.url + this.email.forgot[3]
-                                    this.mail.subject="it-connects.us | Password Reset"
+                                    this.mail.subject="Value Chain Study | Password Reset"
                                     break;
             case "EMAIL_VERIFY"   : this.mail.html=this.email.verify[0] + obj.user + this.email.verify[1] + obj.url + this.email.verify[2]
-                                    this.mail.subject="it-connects.us | Account Verification"
+                                    this.mail.subject="Value Chain Study | Account Verification"
+                                    break;
+            case "NEWSLETTER_SUBSCRIBED"   : this.mail.html=this.email.newsletter[0] + obj.user + this.email.newsletter[1] 
+                                    this.mail.subject="Value Chain Study | Newsletter"
                                     break;
         }
         this.mail.to=obj.email;

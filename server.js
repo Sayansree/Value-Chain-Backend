@@ -112,6 +112,16 @@ app.post('/find',(request, response)=>{
       verifyUser(request.params.linkhash)
       response.sendFile(path.join( __dirname + `/html/verified.html`));
     })
+  
+    app.post('/newsletter',async (request, response)=>{
+      newsletter(request.body.email,request.body.name)
+      .then(()=>{
+        SMTP.sendMail({type:"NEWSLETTER_SUBSCRIBED", email:request.body.email,user:request.body.name})
+        response.send({satus:true})
+        
+    })
+      .catch(()=>response.send({status:false}))
+    })
 
 
   app.listen(appPort,()=>{
@@ -185,6 +195,12 @@ const createTable = async () =>   {await client.query(
       passwordHash VARCHAR(512) NOT NULL,
       hashlink VARCHAR(512) NOT NULL,
       PRIMARY KEY(email));`);
+
+  await client.query(
+  `CREATE TABLE IF NOT EXISTS newsletter ( 
+      email VARCHAR(50) NOT NULL,
+      name VARCHAR(70) NOT NULL,
+      PRIMARY KEY(email));`);
 }
 
 const addDummy = async() => {
@@ -200,12 +216,22 @@ const reset       = async () => { await dropTable(); await createTable(); }
 const addColumn   = async (col) => await client.query(`ALTER TABLE users ADD ${col} INT NOT NULL DEFAULT 0`).catch((err)=>console.log(`ignoring ${col} column already exists`));
 
 //#######################################################data manupulation###########################################################################
-const addUser   =   async (loc,name,email,passwordhash,linkhash)    =>  await client.query(`INSERT INTO verify 
-  ( loc, name ,email ,passwordhash,hashlink ) 
-  VALUES (ST_GeomFromText('POINT(${loc.lat} ${loc.long})'),'${name}','${email}','${passwordhash}','${linkhash}');`);
+const addUser   =   async (loc,name,email,passwordhash,linkhash)    =>  
+await client.query(
+  `INSERT INTO verify 
+  ( loc, name ,email ,passwordhash,hashlink ) VALUES 
+  (ST_GeomFromText('POINT(${loc.lat} ${loc.long})'),'${name}','${email}','${passwordhash}','${linkhash}');`);
+
 const verifyUser   =   async (linkhash)    =>{
-              await client.query(`INSERT INTO users (loc, name ,email ,passwordhash) SELECT loc,name,email,passwordhash FROM verify WHERE hashlink='${linkhash}'`);
-              await client.query(`DELETE FROM verify WHERE hashlink='${linkhash}'`);
+    await client.query(`INSERT INTO users (loc, name ,email ,passwordhash) 
+    SELECT loc,name,email,passwordhash FROM verify WHERE hashlink='${linkhash}'`);
+    await client.query(`DELETE FROM verify WHERE hashlink='${linkhash}'`);
+}
+
+const newsletter   =   async (email,name)    =>{
+  await client.query(
+    `INSERT INTO newsletter (email,name) VALUES
+    ('${email}','${name}')`);
 }
 const removeUser=   async (cookiehash)    => await client.query(`DELETE FROM users WHERE cookiehash = '${cookiehash} IF EXISTS;`);
 const addcookie =   async (email,cookiehash) => await client.query(`UPDATE users SET cookiehash = '${cookiehash}' WHERE EMAIL = '${email}'`)
@@ -282,6 +308,7 @@ const auth =  async (email,passhash)  =>{
       }else
           fail({pass: false,email:false});
 })};
+
 
   async function test() {
       await connectDatabase();
