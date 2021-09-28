@@ -117,7 +117,7 @@ app.post('/find',(request, response)=>{
       newsletter(request.body.email,request.body.name)
       .then(()=>{
         SMTP.sendMail({type:"NEWSLETTER_SUBSCRIBED", email:request.body.email,user:request.body.name})
-        response.send({satus:true})
+        response.send({status:true})
         
     })
       .catch(()=>response.send({status:false}))
