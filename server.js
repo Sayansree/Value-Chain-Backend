@@ -300,13 +300,14 @@ const nearMe =   async (dist,cookiehash) => {
 };
 
 const searchByName =   async (querry,limit) => {
+  querry=querry.toUpperCase()
   return myPromise = new Promise(async(success, fail) =>{
     let rs = await client.query(`SELECT name,bio,id FROM users WHERE 
-    name LIKE '${querry}%' OR
-    name LIKE '${querry}' OR
-    name LIKE '%${querry}' OR
-    name LIKE '%${querry}%' OR
-    bio LIKE '%${querry}%'
+    upper(name) LIKE '${querry}%' OR
+    upper(name) LIKE '${querry}' OR
+    upper(name) LIKE '%${querry}' OR
+    upper(name) LIKE '%${querry}%' OR
+    upper(bio) LIKE '%${querry}%'
      LIMIT ${limit} ;`);
     // console.log(rs.rows)
     if(rs.rowCount>=1){
