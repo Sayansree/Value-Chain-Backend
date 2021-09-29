@@ -24,6 +24,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(upload.array()); 
 app.use(express.static('public'));
 
+
+var uid = /^([0-9]|[a-f]){8}-([0-9]|[a-f]){4}-([0-9]|[a-f]){4}-([0-9]|[a-f]){4}-([0-9]|[a-f]){12}$/;
+
 app.get('/test', (req, res) => {
       res.send('OK');
 });
@@ -122,6 +125,17 @@ app.post('/find',(request, response)=>{
     })
       .catch(()=>response.send({status:false}))
     })
+
+
+    app.get('/profile/:uid',async (request, response)=>{
+      if(request.params.uid.match(uid))
+      check(request.params.uid)
+      .then(()=>response.sendFile(path.join( __dirname + '/html/profile.html')))
+      .catch(()=>response.sendStatus(404))
+      else
+      response.sendStatus(404)
+    }
+    )
 
 
   app.listen(appPort,()=>{
@@ -246,6 +260,15 @@ const checkemail =   async (email) => {
       fail();
   })
 };
+const check =   async (id) => {
+  return myPromise = new Promise(async(success, fail) =>{
+    let rs = await client.query(`SELECT id FROM users WHERE id='${id}'`);
+    if(rs.rowCount==1){
+      success(rs.rows);
+    }else
+      fail();
+  })
+};
 const checkemailVerify =   async (email) => {
   return myPromise = new Promise(async(success, fail) =>{
     let rs = await client.query(`SELECT email FROM verify WHERE email = '${email}';`);
@@ -271,7 +294,7 @@ const nearMe =   async (dist,cookiehash) => {
 
 const searchByName =   async (querry,limit) => {
   return myPromise = new Promise(async(success, fail) =>{
-    let rs = await client.query(`SELECT name FROM users WHERE 
+    let rs = await client.query(`SELECT name,bio,id FROM users WHERE 
     name LIKE '${querry}%' OR
     name LIKE '${querry}' OR
     name LIKE '%${querry}' OR
