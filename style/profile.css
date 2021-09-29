@@ -1,10 +1,11 @@
 * {
     margin: 0;
     padding: 0
+
 }
 
 body {
-    background-color: #000
+    /* background-color;: rgb(130, 77, 77)!important */
 }
 
 .card {
@@ -85,4 +86,7 @@ hr .new1 {
 
 .date {
     background-color: #ccc
+}
+span{
+    font-size: large;
 }

@@ -134,8 +134,12 @@ app.post('/find',(request, response)=>{
       .catch(()=>response.sendStatus(404))
       else
       response.sendStatus(404)
-    }
-    )
+    })
+    app.post('/search/:uid',async (request, response)=>{
+      searchByID(request.params.uid)
+      .then((resp)=>response.send({ok:true,data:resp}))
+      .catch(()=>response.send({ok:false}))
+    })
 
 
   app.listen(appPort,()=>{
@@ -303,6 +307,17 @@ const searchByName =   async (querry,limit) => {
     // console.log(rs.rows)
     if(rs.rowCount>=1){
       success(rs.rows);
+    }else
+      fail();
+  })
+};
+
+const searchByID =   async (id) => {
+  return myPromise = new Promise(async(success, fail) =>{
+    let rs = await client.query(`SELECT name,bio,id FROM users WHERE id='${id}' ;`);
+    // console.log(rs.rows)
+    if(rs.rowCount==1){
+      success(rs.rows[0]);
     }else
       fail();
   })
