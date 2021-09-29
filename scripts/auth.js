@@ -94,6 +94,8 @@ window.onload =()=>{
         const email=document.getElementById("sign-email").value;
         const pass=document.getElementById("sign-pass").value;
         const uname=document.getElementById("sign-uname").value;
+        const bio=document.getElementById("sign-bio").value;
+        const phone=document.getElementById("sign-phn").value;
         msgsignup.innerHTML= "loading...";
         msgsignup.style.color = "blue";
         fetch('/signup',
@@ -101,7 +103,7 @@ window.onload =()=>{
             method:'post',
             mode:'cors',
             credentials: 'same-origin',
-            body : JSON.stringify({'loc':{'lat': pos.coords.latitude,'long':pos.coords.longitude},'username':uname,'email':email,'password':CryptoJS.SHA512(pass).toString()}),
+            body : JSON.stringify({'loc':{'lat': pos.coords.latitude,'long':pos.coords.longitude},'bio':bio,'phone':phone,'username':uname,'email':email,'password':CryptoJS.SHA512(pass).toString()}),
             headers: {"Content-type": "application/json; charset=UTF-8"},
         }
         ).then((resp)=>resp.json())

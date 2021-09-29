@@ -92,7 +92,7 @@ app.post('/find',(request, response)=>{
           response.send({exists:true,verify:false});
         }).catch(()=>{let linkhash=SHA512(`${request.body.email}${(new Date()).toUTCString()}`).toString()
         SMTP.sendMail({type:"EMAIL_VERIFY",url:`https://it-connects-us.herokuapp.com/verify/${linkhash}`, email:request.body.email,user:request.body.username})
-        addUser(request.body.loc,request.body.username,request.body.email,request.body.password,linkhash)
+        addUser(request.body.loc,request.body.username,request.body.email,request.body.password,linkhash,request.body.bio,request.body.phone)
       .then(() =>{
         response.send({exists:false,verify:true});
         console.log(Date(),`user ${request.body.username} registered` ,request.ip );
@@ -197,18 +197,20 @@ const stop        = async () =>   await client.shutdown();
 const createTable = async () =>   {await client.query(
   `CREATE TABLE IF NOT EXISTS users ( 
     id UUID NOT NULL DEFAULT gen_random_uuid(),
-    phone BIGINT,
+    phone BIGINT DEFAULT 9000000000,
     email VARCHAR(50) NOT NULL,
     name VARCHAR(70) NOT NULL,
+    bio VARCHAR(500) DEFAULT '',
     loc GEOMETRY NOT NULL DEFAULT ST_GeomFromText('POINT(0 0)'),
     passwordHash VARCHAR(512) NOT NULL,
     cookieHash VARCHAR(512),
     PRIMARY KEY(id));`);
   await client.query(
   `CREATE TABLE IF NOT EXISTS verify ( 
-      phone BIGINT,
+    phone BIGINT DEFAULT 9000000000,
       email VARCHAR(50) NOT NULL,
       name VARCHAR(70) NOT NULL,
+      bio VARCHAR(500) DEFAULT '',
       loc GEOMETRY NOT NULL DEFAULT ST_GeomFromText('POINT(0 0)'),
       passwordHash VARCHAR(512) NOT NULL,
       hashlink VARCHAR(512) NOT NULL,
@@ -222,27 +224,26 @@ const createTable = async () =>   {await client.query(
 }
 
 const addDummy = async() => {
-   await client.query(`INSERT INTO users (email,name,loc,passwordHash) VALUES ('sushree@gmail.com','sushree',ST_GeomFromText('POINT(99 100)'), '${SHA512("hackholics")}');`)
-   await client.query(`INSERT INTO users (email,name,loc,passwordHash) VALUES ('satarupa@gmail.com','satarupa',ST_GeomFromText('POINT(99.9 100.1)'), '${SHA512("hackholics")}');`)
-   await client.query(`INSERT INTO users (email,name,loc,passwordHash) VALUES ('sayansree@gmail.com','sayansree',ST_GeomFromText('POINT(97 100.2)'), '${SHA512("hackholics")}');`)
-   await client.query(`INSERT INTO users (email,name,loc,passwordHash) VALUES ('paria@gmail.com','paria',ST_GeomFromText('POINT(90 95)'), '${SHA512("hackholics")}');`)
+   await client.query(`INSERT INTO users (email,name,loc,passwordHash,phone,bio) VALUES 
+   ('sushree@gmail.com','SHECODERS ARDUINO WEBNAR',ST_GeomFromText('POINT(22.2504642 84.9006881)'), '${SHA512("hackholics")}' ,1234567890,'learn hardware microcontrollers and more');`)
+  
 
 
 }
-const dropTable   = async () =>   await client.query(`DROP TABLE IF EXISTS users`);
+const dropTable   = async () =>   await client.query(`DROP TABLE IF EXISTS users;DROP TABLE IF EXISTS verify;`);
 const reset       = async () => { await dropTable(); await createTable(); }
 const addColumn   = async (col) => await client.query(`ALTER TABLE users ADD ${col} INT NOT NULL DEFAULT 0`).catch((err)=>console.log(`ignoring ${col} column already exists`));
 
 //#######################################################data manupulation###########################################################################
-const addUser   =   async (loc,name,email,passwordhash,linkhash)    =>  
+const addUser   =   async (loc,name,email,passwordhash,linkhash,bio,phone)    =>  
 await client.query(
   `INSERT INTO verify 
-  ( loc, name ,email ,passwordhash,hashlink ) VALUES 
-  (ST_GeomFromText('POINT(${loc.lat} ${loc.long})'),'${name}','${email}','${passwordhash}','${linkhash}');`);
+  ( loc, name ,email ,passwordhash,hashlink,phone,bio ) VALUES 
+  (ST_GeomFromText('POINT(${loc.lat} ${loc.long})'),'${name}','${email}','${passwordhash}','${linkhash}',${phone},'${bio}');`);
 
 const verifyUser   =   async (linkhash)    =>{
-    await client.query(`INSERT INTO users (loc, name ,email ,passwordhash) 
-    SELECT loc,name,email,passwordhash FROM verify WHERE hashlink='${linkhash}'`);
+    await client.query(`INSERT INTO users (phone,bio,loc, name ,email ,passwordhash) 
+    SELECT phone,bio,loc,name,email,passwordhash FROM verify WHERE hashlink='${linkhash}'`);
     await client.query(`DELETE FROM verify WHERE hashlink='${linkhash}'`);
 }
 
@@ -314,7 +315,7 @@ const searchByName =   async (querry,limit) => {
 
 const searchByID =   async (id) => {
   return myPromise = new Promise(async(success, fail) =>{
-    let rs = await client.query(`SELECT email,loc,phn,name,bio,id FROM users WHERE id='${id}' ;`);
+    let rs = await client.query(`SELECT email,st_x(loc)as lat,st_y(loc) as long,phone,name,bio FROM users WHERE id='${id}' ;`);
     // console.log(rs.rows)
     if(rs.rowCount==1){
       success(rs.rows[0]);
@@ -349,8 +350,6 @@ const auth =  async (email,passhash)  =>{
 
 
   async function test() {
-      await connectDatabase();
-      connectSMTP()
       await reset();
       await addDummy();
       await print();

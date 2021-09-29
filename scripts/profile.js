@@ -15,6 +15,9 @@ window.onload=()=>{
             document.getElementById("name").innerHTML=resp.data.name
             document.getElementById("uid").innerHTML='@'+id.substring(1)
             document.getElementById("bio").innerHTML=resp.data.bio
+            document.getElementById("email").innerHTML="Email: "+resp.data.email
+            document.getElementById("phone").innerHTML="Phone: "+resp.data.phone
+            document.getElementById("loc").href=`https://www.google.com/maps/search/?api=1&zoom=15&query=${resp.data.lat}%2C${resp.data.long}`
         }else{
            
         }
