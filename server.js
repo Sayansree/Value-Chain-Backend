@@ -314,7 +314,7 @@ const searchByName =   async (querry,limit) => {
 
 const searchByID =   async (id) => {
   return myPromise = new Promise(async(success, fail) =>{
-    let rs = await client.query(`SELECT name,bio,id FROM users WHERE id='${id}' ;`);
+    let rs = await client.query(`SELECT email,loc,phn,name,bio,id FROM users WHERE id='${id}' ;`);
     // console.log(rs.rows)
     if(rs.rowCount==1){
       success(rs.rows[0]);
