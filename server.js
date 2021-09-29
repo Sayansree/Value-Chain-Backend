@@ -226,6 +226,8 @@ const createTable = async () =>   {await client.query(
 const addDummy = async() => {
    await client.query(`INSERT INTO users (email,name,loc,passwordHash,phone,bio) VALUES 
    ('sushree@gmail.com','SHECODERS ARDUINO WEBNAR',ST_GeomFromText('POINT(22.2504642 84.9006881)'), '${SHA512("hackholics")}' ,1234567890,'learn hardware microcontrollers and more');`)
+   await client.query(`INSERT INTO users (email,name,loc,passwordHash,phone,bio) VALUES 
+   ('sushree@gmail.com','HACTOBERFEST',ST_GeomFromText('POINT(22.2504642 84.9006881)'), '${SHA512("hackholics")}' ,1234567890,'learn and dig into open source contribution');`)
   
 
 
@@ -303,7 +305,8 @@ const searchByName =   async (querry,limit) => {
     name LIKE '${querry}%' OR
     name LIKE '${querry}' OR
     name LIKE '%${querry}' OR
-    name LIKE '%${querry}%'
+    name LIKE '%${querry}%' OR
+    bio LIKE '%${querry}%'
      LIMIT ${limit} ;`);
     // console.log(rs.rows)
     if(rs.rowCount>=1){
