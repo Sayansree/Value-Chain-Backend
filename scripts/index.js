@@ -2,6 +2,7 @@ window.onload=()=>{
     let url=""
 
     $("#view")[0].onclick=()=>window.location.href+='profile/'+url
+    $("#logout")[0].onclick=()=>window.location.href+='logout'
     $("#save")[0].onclick=()=>{
         fetch(`/save`,
         {

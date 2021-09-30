@@ -17,7 +17,8 @@ window.onload=()=>{
             document.getElementById("bio").innerHTML=resp.data.bio
             document.getElementById("email").href="mailto:"+resp.data.email
             document.getElementById("phone").href="tel:+91"+resp.data.phone
-            document.getElementById("insta").href=esp.data.insta
+            document.getElementById("insta").href=resp.data.insta
+            document.getElementById("twitter").href=resp.data.twitter
         }else{
            
         }
