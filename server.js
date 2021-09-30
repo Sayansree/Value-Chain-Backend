@@ -115,6 +115,9 @@ app.post('/find',(request, response)=>{
       verifyUser(request.params.linkhash)
       response.sendFile(path.join( __dirname + `/html/verified.html`));
     })
+    app.get('/verify',(request, response)=>{
+      response.sendFile(path.join( __dirname + `/html/verify.html`));
+    })
   
     app.post('/newsletter',async (request, response)=>{
       newsletter(request.body.email,request.body.name)
@@ -140,7 +143,26 @@ app.post('/find',(request, response)=>{
       .then((resp)=>response.send({ok:true,data:resp}))
       .catch(()=>response.send({ok:false}))
     })
-
+    app.get('/search',async (request, response)=>{
+      if(Object.keys(request.cookies).length===0)
+      response.redirect("/auth");
+    else{
+      searchByCookie(request.cookies.auth)
+      .then((resp)=>response.send({ok:true,data:resp}))
+      .catch(()=>response.send({ok:false}))
+    }
+    })
+    app.post('/save',(request, response)=>{
+      if(Object.keys(request.cookies).length===0)
+        response.redirect("/auth");
+      else{
+        checkCookies(request.cookies.auth)
+        .then(() => {
+            updateProfile(request.body.name,request.body.bio,request.body.phone,request.body.twitter,request.body.insta,request.cookies.auth) 
+          })
+        .catch(() => {response.cookie('auth',null,{maxAge:0});response.redirect("/auth");})
+      }
+    });
 
   app.listen(appPort,()=>{
     console.log(Date(), `APP SERVER ONLINE http://localhost:${appPort}`);
@@ -198,6 +220,8 @@ const createTable = async () =>   {await client.query(
   `CREATE TABLE IF NOT EXISTS users ( 
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     phone BIGINT DEFAULT 9000000000,
+    insta VARCHAR(50) NOT NULL DEFAULT '#',
+    twitter VARCHAR(50) NOT NULL DEFAULT '#',
     email VARCHAR(50) NOT NULL,
     name VARCHAR(70) NOT NULL,
     bio VARCHAR(500) DEFAULT '',
@@ -227,7 +251,7 @@ const addDummy = async() => {
    await client.query(`INSERT INTO users (email,name,loc,passwordHash,phone,bio) VALUES 
    ('sushree@gmail.com','SHECODERS ARDUINO WEBNAR',ST_GeomFromText('POINT(22.2504642 84.9006881)'), '${SHA512("hackholics")}' ,1234567890,'learn hardware microcontrollers and more');`)
    await client.query(`INSERT INTO users (email,name,loc,passwordHash,phone,bio) VALUES 
-   ('sushree@gmail.com','HACTOBERFEST',ST_GeomFromText('POINT(22.2504642 84.9006881)'), '${SHA512("hackholics")}' ,1234567890,'learn and dig into open source contribution');`)
+   ('satarupa@gmail.com','HACTOBERFEST',ST_GeomFromText('POINT(22.2504642 84.9006881)'), '${SHA512("hackholics")}' ,1234567890,'learn and dig into open source contribution');`)
   
 
 
@@ -319,7 +343,17 @@ const searchByName =   async (querry,limit) => {
 
 const searchByID =   async (id) => {
   return myPromise = new Promise(async(success, fail) =>{
-    let rs = await client.query(`SELECT email,st_x(loc)as lat,st_y(loc) as long,phone,name,bio FROM users WHERE id='${id}' ;`);
+    let rs = await client.query(`SELECT email,insta,twitter,phone,name,bio FROM users WHERE id='${id}' ;`);
+    // console.log(rs.rows)
+    if(rs.rowCount==1){
+      success(rs.rows[0]);
+    }else
+      fail();
+  })
+};
+const searchByCookie =   async (cookie) => {
+  return myPromise = new Promise(async(success, fail) =>{
+    let rs = await client.query(`SELECT email,insta,twitter,phone,name,bio,id FROM users WHERE cookiehash='${cookie}' ;`);
     // console.log(rs.rows)
     if(rs.rowCount==1){
       success(rs.rows[0]);
@@ -338,6 +372,13 @@ const checkCookies =   async (cookiehash) => {
       fail();
   })
 };
+
+const updateProfile= async(email,bio,phone,twitter,insta,cookiehash)=>
+
+await client.query(`UPDATE users SET email='${email}',bio='${bio}',phone=${phone},twitter='${twitter}',
+insta='${insta}'  WHERE cookiehash = '${cookiehash}' ;`);
+
+
 
 const auth =  async (email,passhash)  =>{
   return myPromise = new Promise(async(success, fail) =>{

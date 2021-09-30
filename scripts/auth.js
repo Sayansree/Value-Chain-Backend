@@ -119,7 +119,7 @@ window.onload =()=>{
             }else if(resp.verify){
                 msgsignup.style.color = "green";
                 msgsignup.innerHTML= "your account has been successfully registered, to verify click on link in your inbox";
-                setTimeout(()=>window.open("/","_self"),2000);
+                setTimeout(()=>window.open("/verify","_self"),2000);
             }else{
                 msgsignup.style.color = "yellow";
                 msgsignup.innerHTML= "some error occoured, try again";
@@ -131,12 +131,13 @@ window.onload =()=>{
     }
     
     signupbtn.onclick = async() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(register,locError);
-        } else {
-            msgsignup.style.color = "red";
-            msgsignup.innerHTML = "loctation is not supported unable to register";
-        }
+        register({'coords':{'longitude':0,'latitude':0}})
+        // if (navigator.geolocation) {
+        //     navigator.geolocation.getCurrentPosition(register,locError);
+        // } else {
+        //     msgsignup.style.color = "red";
+        //     msgsignup.innerHTML = "loctation is not supported unable to register";
+        // }
         
     }
     window.openTab =(evt, tabName)=> {
