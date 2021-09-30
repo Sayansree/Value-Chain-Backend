@@ -373,9 +373,9 @@ const checkCookies =   async (cookiehash) => {
   })
 };
 
-const updateProfile= async(email,bio,phone,twitter,insta,cookiehash)=>
+const updateProfile= async(name,bio,phone,twitter,insta,cookiehash)=>
 
-await client.query(`UPDATE users SET email='${email}',bio='${bio}',phone=${phone},twitter='${twitter}',
+await client.query(`UPDATE users SET name='${name}',bio='${bio}',phone=${phone},twitter='${twitter}',
 insta='${insta}'  WHERE cookiehash = '${cookiehash}' ;`);
 
 
