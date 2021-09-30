@@ -31,7 +31,20 @@ We are friends from the same college and we have been making projects and taking
 ---
 
 ## Full project details
-visit the main github repo for more info
--[Main Repository](https://github.com/Sushreesatarupa/Value-Chain)
+This repo contains the backed of Value chain WebSite which is hosted using Heroku platform via CICD(continous integration and deployment) linked with build branch
+this repo provides the following services
+- newsletter service
+- registration of new accounts
+- search entries and keywords from frontend
+- profile pages
+- authintication with email verification
+- accessing CocroachDB database
+- automated emailer service using mailservice from Porkbun
+
+heroku hosting link
+- [it-connects-us.herokuapp.com](https://it-connects-us.herokuapp.com/)
+
+visit the main github repo for more info and full project details
+- [Main Repository](https://github.com/Sushreesatarupa/Value-Chain)
 ---
 
